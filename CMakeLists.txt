@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project Name
-project(Qubed CXX )
+project(Qubed CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
