@@ -36,7 +36,7 @@ int main() {
     glfwSetKeyCallback(window, key_callback);
 
     vk::ApplicationInfo appInfo(NAME, VK_MAKE_VERSION(0, 1, 0), "No Engine",
-                                VK_MAKE_VERSION(0, 1, 0), VK_VERSION_1_4);
+                                VK_MAKE_VERSION(0, 1, 0), VK_API_VERSION_1_4);
     
     uint32_t glfwExtensionCount =0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -68,6 +68,26 @@ int main() {
             debugCallback,
             nullptr),
         nullptr, dld);
+    
+    VkSurfaceKHR surfaceTemp;
+    VkResult err = glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTemp);
+
+    vk::UniqueSurfaceKHR surface(surfaceTemp, *instance);
+
+    std::vector<vk::PhysicalDevice> physicalDevices = instance->enumeratePhysicalDevices();
+
+    std::cout<<"\nList of available devices:";
+    for(auto& device : physicalDevices)
+        std::cout<<device.getProperties().deviceName<<"\n";
+
+    //Select Physical Device here out of the devices in physicalDevices
+
+
+
+
+
+
+        
 
 
 
