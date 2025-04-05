@@ -14,9 +14,9 @@ void key_callback(GLFWwindow* window,int key, int scanCode, int action, int mods
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    vk::DebugUtilsMessageTypeFlagsEXT messageType,
+    const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData) {
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
         return VK_FALSE;
@@ -46,7 +46,7 @@ int main() {
     glfwExtensionsVector.push_back("VK_EXT_debug_utils");
     std::vector<const char*> layers = std::vector<const char*>{"VK_LAYER_KHRONOS_validation"};
     #endif
-
+    
     auto instance = vk::createInstanceUnique(vk::InstanceCreateInfo{
         vk::InstanceCreateFlags{ VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR }, &appInfo,
         #ifndef NDEBUG
@@ -57,39 +57,89 @@ int main() {
         static_cast<uint32_t>(glfwExtensionsVector.size()), glfwExtensionsVector.data()
     });
 
-    vk::detail::DispatchLoaderDynamic dld(instance.get(), vkGetInstanceProcAddr); 
-    
+    vk::detail::DispatchLoaderDynamic dld(instance.get(), vkGetInstanceProcAddr);
 
     auto messenger = instance->createDebugUtilsMessengerEXTUnique(
-        vk::DebugUtilsMessengerCreateInfoEXT( 
-            {},
-            vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
-            vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-            debugCallback,
-            nullptr),
-        nullptr, dld);
+    vk::DebugUtilsMessengerCreateInfoEXT( 
+        {},
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+        debugCallback,
+        nullptr),
+    nullptr, dld);
     
     VkSurfaceKHR surfaceTemp;
-    VkResult err = glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTemp);
+    if(VK_SUCCESS != glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTemp))
+        throw std::runtime_error("Failed to create a Window Surface in GLFW");
 
     vk::UniqueSurfaceKHR surface(surfaceTemp, *instance);
 
     std::vector<vk::PhysicalDevice> physicalDevices = instance->enumeratePhysicalDevices();
 
-    std::cout<<"\nList of available devices:";
-    for(auto& device : physicalDevices)
-        std::cout<<device.getProperties().deviceName<<"\n";
+    std::cout<<"\nList of available devices:\n";
+    for(int i=0; i<physicalDevices.size(); i++)
+        std::cout<<i<<" - "<<physicalDevices[i].getProperties().deviceName<<"\n";
 
-    //Select Physical Device here out of the devices in physicalDevices
+    std::cout<<"\nPlease enter the device number for the device you want to use (Default: 0): \n";
+    char input = std::cin.get();
+
+    vk::PhysicalDevice physicalDevice;
+    if(std::isdigit(input))
+        physicalDevice = physicalDevices[static_cast<int>(input - '0')];
+    else
+        physicalDevice = physicalDevices[0];
+    
+    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+
+    uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
+    uint32_t presentQueueFamilyIndex = UINT32_MAX;
+    for(int i=0; i<queueFamilyProperties.size(); i++){
+        if(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            graphicsQueueFamilyIndex = i;
+        if(physicalDevice.getSurfaceSupportKHR(i, surface.get()))
+            presentQueueFamilyIndex = i;
+    }
+
+    if (graphicsQueueFamilyIndex == UINT32_MAX) {
+        if(presentQueueFamilyIndex == UINT32_MAX)
+            throw std::runtime_error("Couldn't find a suitable graphics queue family and a present queue family");
+        else
+            throw std::runtime_error("Couldn't find a suitable graphics queue family!");
+    } else {
+        if(presentQueueFamilyIndex == UINT32_MAX)
+            throw std::runtime_error("Couldn't find a suitable present Queue family");
+    }
+
+    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << "\n";
+    std::cout << "Present Queue Family Index: " << presentQueueFamilyIndex << "\n";
 
 
 
 
 
 
-        
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    std::cout<<std::flush;      //Flushing the output buffer to ensure the std::cout messages appear immediately.
+                                //Otherwise, the messages may just stay in the output buffer and only get printed later
+                                //after execution completes or something triggers a flush
 
     while(!glfwWindowShouldClose(window)){
         glfwPollEvents();
