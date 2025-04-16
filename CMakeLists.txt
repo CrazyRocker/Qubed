@@ -17,7 +17,7 @@ find_package(Vulkan 1.3 REQUIRED)
 find_package(glfw3 3.4 REQUIRED)
 
 # Source files
-set(SOURCES src/main.cpp)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.hpp)
 
 # Include directories
 include_directories(${Vulkan_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
