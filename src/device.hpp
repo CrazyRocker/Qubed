@@ -6,7 +6,7 @@ namespace owo {
 
 struct SuitabilityInfo{
     bool suitable = false;
-    std::string reason = "Uknown error :(";
+    const char* const reason = "Unknown error :(";
 };
 
 SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice device, vk::UniqueSurfaceKHR& surface);
