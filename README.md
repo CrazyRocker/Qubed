@@ -22,17 +22,25 @@ To get started with Qubed, you'll need to clone the repository with its submodul
 
 Run the following command to clone with the submodules:
 
-`git clone --recursive https://github.com/CrazyRocker/Qubed`
+```bash
+git clone --recursive https://github.com/CrazyRocker/Qubed
+```
 
 In case you have already cloned the repository without the submodules, run:
 
-`git submodule update --init --recursive`
+```bash
+git submodule update --init --recursive
+```
 
 ### Running CMake
 
 Once you have cloned the repository, create a folder called `build` (or anything else which suits you) inside the root directory of the repository.
 
-Open a terminal inside this newly created folder, and run `cmake ..` to generate the build files.
+Open a terminal inside this newly created folder, and run 
+```bash
+cmake ..
+```
+to generate the build files.
 
 Alternatively, you may run `cmake .. -G {build_system}` where `{build_system}` is the name of your preferred build system (e.g., Unix Makefiles, Ninja).
 
