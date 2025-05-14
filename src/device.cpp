@@ -7,7 +7,7 @@ namespace owo {
 
 
 SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice device, vk::UniqueSurfaceKHR& surface){
-    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = getGraphicsQueueAndPresentQueue(device, surface);
+    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = getGraphicsQueueAndPresentQueue_optional(device, surface);
     if (!graphicsQueueFamilyIndex.has_value()) {
         if(!presentQueueFamilyIndex.has_value()) {
             return {false, "No graphics or present queue family found!"};
@@ -56,7 +56,7 @@ vk::PhysicalDevice getPhysicalDevice(vk::UniqueHandle<vk::Instance, vk::detail::
 }
 
 
-std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndPresentQueue(const vk::PhysicalDevice& physicalDevice, const vk::UniqueSurfaceKHR& surface) {
+std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndPresentQueue_optional(const vk::PhysicalDevice& physicalDevice, const vk::UniqueSurfaceKHR& surface) {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
     
     std::optional<uint32_t> graphicsQueueFamilyIndex;
@@ -72,5 +72,20 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndP
     return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
 }
 
+std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::PhysicalDevice& physicalDevice, const vk::UniqueSurfaceKHR& surface) {
+    std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
+    
+    uint32_t graphicsQueueFamilyIndex;
+    uint32_t presentQueueFamilyIndex;
+
+    for(int i=0; i<queueFamilyProperties.size(); i++){
+        if(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics)
+            graphicsQueueFamilyIndex = i;
+        if(physicalDevice.getSurfaceSupportKHR(i, surface.get()))
+            presentQueueFamilyIndex = i;
+    }
+
+    return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
+}
 
 }

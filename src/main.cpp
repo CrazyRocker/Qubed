@@ -37,9 +37,11 @@ int main() {
     const auto& queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
 
     auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
-
-    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex.value() << '\n'
-              << "Present Queue Family Index: " << presentQueueFamilyIndex.value() << '\n';
+    
+    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << '\n'
+              << "Present Queue Family Index: " << presentQueueFamilyIndex << '\n';
+    
+    //Add Logical Device creation code here.
 
     std::cout<<std::flush;      //Flushing the output buffer to ensure the std::cout messages appear immediately.
                                 //Otherwise, the messages may just stay in the output buffer and only get printed later
@@ -53,7 +55,7 @@ int main() {
     glfwTerminate();
 
     } catch (std::exception& exception){
-        std::cerr<<exception.what();
+        std::cerr<<exception.what()<<'\n';
         return -1;
     }
 }
