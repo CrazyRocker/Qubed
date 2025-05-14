@@ -6,20 +6,6 @@ This is a **Work-in-Progress (WIP)**, so things might break, crash, or spontaneo
 
 ---
 
-## 🗂️ Structure
-
-```
-src/
-├── device.cpp / device.hpp     → Physical & logical device setup  
-├── instance.cpp / instance.hpp → Vulkan instance & validation layers  
-├── utils.cpp / utils.hpp       → Utility / Helper Functions  
-├── window.cpp / window.hpp     → GLFW window creation & callbacks  
-├── main.cpp                    → Main setup logic
-dependencies/
-├── glfw                        → This folder should exist if the repository
-                                  is cloned with its submodules.
-```
-
 ## 🛠️ Building
 
 ### Minimum Requirements
@@ -54,3 +40,24 @@ Alternatively, you may run `cmake .. -G {build_system}` where `{build_system}` i
 
 Now, you may run `make`, `ninja` or any other applicable command depending on your system's default build system.
 
+You should find the `Qubed` executable in the directory you just created. 
+
+😺 Enjoy! 😺
+
+---
+
+## 🗂️ Structure
+
+```
+src/
+├── device.cpp / device.hpp     → Physical & logical device setup
+├── instance.cpp / instance.hpp → Vulkan instance & validation layers
+├── utils.cpp / utils.hpp       → Utility / Helper Functions
+├── window.cpp / window.hpp     → GLFW window creation & callbacks
+├── main.cpp                    → Main setup logic
+dependencies/
+├── glfw                        → This folder should exist if the repository
+                                  is cloned with its submodules.
+```
+
+---
