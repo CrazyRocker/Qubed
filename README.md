@@ -14,7 +14,9 @@ To build Qubed you will need:
 - A C++17 compatible compiler (like g++ or clang++)
 - Vulkan SDK - Version 1.4 installed and configured
 - CMake Version 3.1 or higher
+- Git (for submodules)
 
+You don't need to have a Vulkan compatible GPU to build the project however you do need one to run it, in which case, feel free to admire the code :)
 
 ### Cloning the repository
 

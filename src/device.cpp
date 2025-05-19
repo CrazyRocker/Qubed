@@ -88,4 +88,33 @@ std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::Physical
     return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
 }
 
+vk::UniqueDevice getUniqueDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+    vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
+    
+    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
+    
+    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << '\n'
+              << "Present Queue Family Index: " << presentQueueFamilyIndex << '\n';
+    
+    float queuePriority = 1.0;
+    std::array<vk::DeviceQueueCreateInfo, 2> queueCreateInfos{
+        vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(graphicsQueueFamilyIndex), 1, &queuePriority},
+        vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(presentQueueFamilyIndex),  1, &queuePriority}
+    };
+
+    const char* extensions[] = {"VK_KHR_swapchain"};
+
+    if(graphicsQueueFamilyIndex==presentQueueFamilyIndex){
+        return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
+            vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size())-1, queueCreateInfos.data(),
+            0u, nullptr,
+            static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
+    } else {
+        return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
+            vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(),
+            0u, nullptr,
+            static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
+    }
+}
+
 }

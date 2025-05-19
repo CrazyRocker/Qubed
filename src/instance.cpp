@@ -1,6 +1,5 @@
 #include "instance.hpp"
 #include <iostream>
-#include <GLFW/glfw3.h>
 
 namespace owo {
 
@@ -57,6 +56,14 @@ vk::UniqueHandle<vk::Instance, vk::detail::DispatchLoaderStatic> createVulkanIns
         nullptr),
     nullptr, dld);
     return instance;
+}
+
+vk::UniqueSurfaceKHR getUniqueSurface(vk::UniqueInstance& instance, GLFWwindow* window) {
+    VkSurfaceKHR surfaceTemp;
+    if(VK_SUCCESS != glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTemp)) {
+        throw std::runtime_error("Failed to create a Window Surface in GLFW");
+    }
+    return vk::UniqueSurfaceKHR(surfaceTemp, *instance);
 }
 
 }

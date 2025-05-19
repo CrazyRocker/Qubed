@@ -26,22 +26,9 @@ int main() {
     
     auto instance = owo::createVulkanInstance(NAME);    //Also creates a debug callback (for vulkan)
     
-    VkSurfaceKHR surfaceTemp;
-    if(VK_SUCCESS != glfwCreateWindowSurface(*instance, window, nullptr, &surfaceTemp)) {
-        throw std::runtime_error("Failed to create a Window Surface in GLFW");
-    }
-    vk::UniqueSurfaceKHR surface(surfaceTemp, *instance);
+    vk::UniqueSurfaceKHR surface = owo::getUniqueSurface(instance, window);
 
-    vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
-    
-    const auto& queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
-
-    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
-    
-    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << '\n'
-              << "Present Queue Family Index: " << presentQueueFamilyIndex << '\n';
-    
-    //Add Logical Device creation code here.
+    vk::UniqueDevice device = owo::getUniqueDevice(instance, surface);
 
     std::cout<<std::flush;      //Flushing the output buffer to ensure the std::cout messages appear immediately.
                                 //Otherwise, the messages may just stay in the output buffer and only get printed later
