@@ -72,6 +72,7 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndP
     return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
 }
 
+
 std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::PhysicalDevice& physicalDevice, const vk::UniqueSurfaceKHR& surface) {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
     
@@ -91,30 +92,25 @@ std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::Physical
 vk::UniqueDevice getUniqueDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
     vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
     
+    //Getting the QueueFamilies
     auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
-    
     std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << '\n'
               << "Present Queue Family Index: " << presentQueueFamilyIndex << '\n';
+    
+    const char* extensions[] = {"VK_KHR_swapchain"};
     
     float queuePriority = 1.0;
     std::array<vk::DeviceQueueCreateInfo, 2> queueCreateInfos{
         vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(graphicsQueueFamilyIndex), 1, &queuePriority},
         vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(presentQueueFamilyIndex),  1, &queuePriority}
     };
+    uint8_t queueCount = (graphicsQueueFamilyIndex==presentQueueFamilyIndex)?1:2; //
 
-    const char* extensions[] = {"VK_KHR_swapchain"};
-
-    if(graphicsQueueFamilyIndex==presentQueueFamilyIndex){
-        return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
-            vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size())-1, queueCreateInfos.data(),
-            0u, nullptr,
-            static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
-    } else {
-        return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
-            vk::DeviceCreateFlags(), static_cast<uint32_t>(queueCreateInfos.size()), queueCreateInfos.data(),
-            0u, nullptr,
-            static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
-    }
+    return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
+        vk::DeviceCreateFlags(), queueCount, queueCreateInfos.data(),
+        0u, nullptr,
+        static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
 }
+
 
 }
