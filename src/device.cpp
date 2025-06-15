@@ -6,8 +6,10 @@
 namespace owo {
 
 
-SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice device, vk::UniqueSurfaceKHR& surface){
-    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = getGraphicsQueueAndPresentQueue_optional(device, surface);
+
+SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice physicalDevice, vk::UniqueSurfaceKHR& surface){
+    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = getGraphicsQueueAndPresentQueue_optional(physicalDevice, surface);
+    //Checking for Graphics or Queue Families
     if (!graphicsQueueFamilyIndex.has_value()) {
         if(!presentQueueFamilyIndex.has_value()) {
             return {false, "No graphics or present queue family found!"};
@@ -18,6 +20,29 @@ SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice device, vk::UniqueSu
         if(!presentQueueFamilyIndex.has_value()) {
             return {false, "No present Queue family found!"};
         }
+    }
+
+    //Checking if there is at least one way to present data and at least one place to present data to (I think, lol)
+    std::vector<vk::SurfaceFormatKHR> surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface.get());
+    std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(surface.get());
+    if(surfaceFormats.empty())
+        return {false, "Could not find a single surface format to use on the selected GPU"};
+    if(presentModes.empty())
+        return {false, "Could not find a single present mode to use on the selected GPU"};
+
+    //Checking if all the required extensions are available 
+    std::vector<vk::ExtensionProperties> deviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+
+    for(int i=0; i < requiredExtensionsCount; i++) {
+        bool found = false;
+        const char* requiredExtension = requiredExtensions[i];
+
+        for(int j=0; j < deviceExtensions.size();j++)
+            if(strcmp(requiredExtension, deviceExtensions[j].extensionName) == 0)
+                found = true;
+
+        if(found==false)
+            return {false, std::string("Could not find the extension \"") + requiredExtensions[i] + "\" in the list of extensions supported by the selected GPU."};
     }
 
     return {true, "Supported! :D"};
@@ -89,28 +114,26 @@ std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::Physical
     return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
 }
 
+
 vk::UniqueDevice getUniqueDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
     vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
     
     //Getting the QueueFamilies
     auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
-    std::cout << "Graphics Queue Family Index: " << graphicsQueueFamilyIndex << '\n'
-              << "Present Queue Family Index: " << presentQueueFamilyIndex << '\n';
-    
-    const char* extensions[] = {"VK_KHR_swapchain"};
     
     float queuePriority = 1.0;
-    std::array<vk::DeviceQueueCreateInfo, 2> queueCreateInfos{
+    vk::DeviceQueueCreateInfo queueCreateInfos[] {
         vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(graphicsQueueFamilyIndex), 1, &queuePriority},
         vk::DeviceQueueCreateInfo{vk::DeviceQueueCreateFlags(), static_cast<uint32_t>(presentQueueFamilyIndex),  1, &queuePriority}
     };
-    uint8_t queueCount = (graphicsQueueFamilyIndex==presentQueueFamilyIndex)?1:2; //
+    uint8_t queueCount = (graphicsQueueFamilyIndex==presentQueueFamilyIndex)?1:2;
 
     return physicalDevice.createDeviceUnique(vk::DeviceCreateInfo(
-        vk::DeviceCreateFlags(), queueCount, queueCreateInfos.data(),
+        vk::DeviceCreateFlags(), queueCount, queueCreateInfos,
         0u, nullptr,
-        static_cast<uint32_t>(sizeof(extensions))/sizeof(extensions[0]), extensions));
+        static_cast<uint32_t>(requiredExtensionsCount), requiredExtensions));
 }
+
 
 
 }

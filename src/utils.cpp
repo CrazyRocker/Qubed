@@ -18,7 +18,6 @@ uint8_t input_get_uint8_t(const std::string& prompt, uint8_t defaultValue){
 
     if(std::isdigit(input[firstDigitCharIndex])){
         value += input[firstDigitCharIndex] - '0';      //Getting the first number inside value after converting the character to a number
-        bool validInput = true;
 
         if(input.length() == firstDigitCharIndex+1){
             return value;
@@ -30,7 +29,7 @@ uint8_t input_get_uint8_t(const std::string& prompt, uint8_t defaultValue){
 
                 if(value>UINT8_MAX){
                     std::cout<<"Oops! The number you have entered is too large, only numbers from 0-255 are allowed, please try again!\n";
-                    validInput=false; break;
+                    break;
                 }
             }
             else if(ch==' ') {
@@ -38,10 +37,9 @@ uint8_t input_get_uint8_t(const std::string& prompt, uint8_t defaultValue){
             } 
             else {
                 std::cout<<"Oops! Only numbers from 0-255 are allowed, please try again!\n";
-                validInput=false; break;
+                break;
             }
-            if(validInput)
-                return value;
+            return value;
         }
     }
     else{
