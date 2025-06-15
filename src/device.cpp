@@ -92,6 +92,8 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndP
             graphicsQueueFamilyIndex = i;
         if(physicalDevice.getSurfaceSupportKHR(i, surface.get()))
             presentQueueFamilyIndex = i;
+        if(graphicsQueueFamilyIndex.has_value() && presentQueueFamilyIndex.has_value())
+            break;
     }
 
     return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
@@ -101,17 +103,19 @@ std::pair<std::optional<uint32_t>, std::optional<uint32_t>> getGraphicsQueueAndP
 std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::PhysicalDevice& physicalDevice, const vk::UniqueSurfaceKHR& surface) {
     std::vector<vk::QueueFamilyProperties> queueFamilyProperties = physicalDevice.getQueueFamilyProperties();
     
-    uint32_t graphicsQueueFamilyIndex;
-    uint32_t presentQueueFamilyIndex;
+    std::optional<uint32_t> graphicsQueueFamilyIndex;
+    std::optional<uint32_t> presentQueueFamilyIndex;
 
     for(int i=0; i<queueFamilyProperties.size(); i++){
         if(queueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics)
             graphicsQueueFamilyIndex = i;
         if(physicalDevice.getSurfaceSupportKHR(i, surface.get()))
             presentQueueFamilyIndex = i;
+        if(graphicsQueueFamilyIndex.has_value() && presentQueueFamilyIndex.has_value())
+            break;
     }
 
-    return {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
+    return {graphicsQueueFamilyIndex.value(), presentQueueFamilyIndex.value()};
 }
 
 
