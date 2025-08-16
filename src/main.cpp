@@ -24,11 +24,18 @@ int main() {
         throw std::runtime_error("Failed to create GLFW window!");
     }
     
-    auto instance = owo::createVulkanInstance(NAME);    //Also creates a debug callback (for vulkan)
+    owo::VulkanContext vulkanContext;
+    vulkanContext.vkInstance = owo::createVulkanInstance(NAME);    //Also creates a debug callback (for vulkan)
     
-    vk::UniqueSurfaceKHR surface = owo::getUniqueSurface(instance, window);
+    //NEVER FORGET TO INITIALIZE THESE. THE REST OF THE PROGRAM ASSUMES NOTHING IN THE vulkanContext OBJECT WILL BE UNINITIALIZED!!!
 
-    vk::UniqueDevice device = owo::getUniqueDevice(instance, surface);
+    vk::UniqueSurfaceKHR surface = owo::getUniqueSurface(vulkanContext.vkInstance.instance, window);
+
+    vulkanContext.vkDevices = owo::createVulkanDevice(vulkanContext.vkInstance.instance, surface);    
+
+    vulkanContext.vkSwapchain = owo::createSwapChain(vulkanContext, window, surface);
+
+
 
     std::cout<<std::flush;      //Flushing the output buffer to ensure the std::cout messages appear immediately.
                                 //Otherwise, the messages may just stay in the output buffer and only get printed later

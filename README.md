@@ -1,5 +1,7 @@
 # Qubed
 
+NOTE: This version of the project may not compile. A rewritten and more maintainable version of the engine is being worked on as you read this. If you still want to test this project out then I recommend checking the last commit before this.
+
 **Qubed**  (with a *very dignified* capital **Q**, because it's fancy like that ✨) is a custom-built Vulkan-based rendering engine, developed from scratch with love, caffeine, and cat-like curiosity. It's a personal playground and learning project, inspired very loosely by TheCherno’s *Cubed*—but with original architecture and implementation. This engine is entirely independent and not based on any external rendering framework.
 
 This is a **Work-in-Progress (WIP)**, so things might break, crash, or spontaneously combust (hopefully not literally). Expect rapid changes, wild experiments, and possibly a sprinkle of magic dust ✨

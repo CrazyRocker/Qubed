@@ -1,11 +1,11 @@
 #include "device.hpp"
+#include "GLFW/glfw3.h"
 #include "utils.hpp"
 #include <climits>
+#include <algorithm>
 #include <iostream>
 
 namespace owo {
-
-
 
 SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice physicalDevice, vk::UniqueSurfaceKHR& surface){
     auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = getGraphicsQueueAndPresentQueue_optional(physicalDevice, surface);
@@ -49,7 +49,7 @@ SuitabilityInfo isPhysicalDeviceSuitable(vk::PhysicalDevice physicalDevice, vk::
 }
 
 
-vk::PhysicalDevice getPhysicalDevice(vk::UniqueHandle<vk::Instance, vk::detail::DispatchLoaderStatic>& instance, vk::UniqueSurfaceKHR& surface) {
+vk::PhysicalDevice getPhysicalDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
     std::vector<vk::PhysicalDevice> physicalDevices = instance->enumeratePhysicalDevices();
 
     if(physicalDevices.size() == 0){
@@ -119,10 +119,7 @@ std::pair<uint32_t, uint32_t> getGraphicsQueueAndPresentQueue(const vk::Physical
 }
 
 
-vk::UniqueDevice getUniqueDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
-    vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
-    
-    //Getting the QueueFamilies
+vk::UniqueDevice getUniqueDevice(vk::PhysicalDevice& physicalDevice, vk::UniqueSurfaceKHR& surface) {
     auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(physicalDevice, surface);
     
     float queuePriority = 1.0;
@@ -139,5 +136,106 @@ vk::UniqueDevice getUniqueDevice(vk::UniqueInstance& instance, vk::UniqueSurface
 }
 
 
+VulkanDevice createVulkanDevice(vk::UniqueInstance& instance, vk::UniqueSurfaceKHR& surface) {
+    vk::PhysicalDevice physicalDevice = owo::getPhysicalDevice(instance, surface);
+    vk::UniqueDevice logicalDevice = getUniqueDevice(physicalDevice, surface);
+    return {physicalDevice, std::move(logicalDevice)};
+}
+
+
+vk::SurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableSurfaceFormats) {
+    for(auto surfaceFormat : availableSurfaceFormats) {
+        if(surfaceFormat.format == vk::Format::eB8G8R8A8Srgb && surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) //Selecting for a standard image format and colourspace. We could do better by checking for, say, 10 bit colour or other, better image formats but that adds unwanted complexity at this stage (26/06/2025) (dd/mm/yyyy)
+            return surfaceFormat;
+    }
+    return availableSurfaceFormats[0];  //In this case, pray to god and hope for the best xD
+}
+
+
+vk::PresentModeKHR chooseSwapPresentMode(const std::vector<vk::PresentModeKHR> availablePresentModes) {
+    for(const auto& presentMode : availablePresentModes) {
+        if(presentMode == vk::PresentModeKHR::eMailbox) //Preferred presentmode
+            return presentMode;
+    }
+    return vk::PresentModeKHR::eFifo;
+}
+
+
+vk::Extent2D chooseSwapExtent(const vk::SurfaceCapabilitiesKHR surfaceCapabilities, GLFWwindow* window) {
+    if(surfaceCapabilities.currentExtent.width != UINT32_MAX) {     //The surfaceCapabilities.extent being equalt to UINT32_MAX is the window manager signaling that the screen resolution is allowed to, and may be different from the framebuffer resolution. 
+        return surfaceCapabilities.currentExtent;                   //If it is not equal to UINT32_MAX, we can simply treat both forms of resolution as equal
+    } else {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        
+        vk::Extent2D actualExtent{                  //Struct which will containt the actual framebuffer resolution
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+        
+        actualExtent.width  =  std::clamp(actualExtent.width,  surfaceCapabilities.minImageExtent.width,  surfaceCapabilities.maxImageExtent.width);
+        actualExtent.height =  std::clamp(actualExtent.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+
+        return actualExtent;
+    }
+}
+
+
+SwapChainSupportDetails querySwapChainSupport(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR& surface, vk::detail::DispatchLoaderStatic dispatch) {
+    SwapChainSupportDetails details;
+
+    details.capabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface, dispatch);
+
+    details.formats = physicalDevice.getSurfaceFormatsKHR(surface);
+
+    details.presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+
+    return details;
+}
+
+
+VulkanSwapChain createSwapChain(VulkanContext& vulkanContext, GLFWwindow* window, vk::UniqueSurfaceKHR& surface) {
+    SwapChainSupportDetails swapChainDetails = querySwapChainSupport(vulkanContext.vkDevices.physicalDevice, surface.get(), vulkanContext.vkInstance.instance.getDispatch());
+
+    vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainDetails.formats);
+    vk::SurfacePresentModeEXT presentMode = chooseSwapPresentMode(swapChainDetails.presentModes);
+    vk::Extent2D extent = chooseSwapExtent(swapChainDetails.capabilities, window);
+
+    uint8_t imageCount = swapChainDetails.capabilities.minImageCount + 1;                                           //We try to request for one more image in the swapchain than the minimum
+    if(swapChainDetails.capabilities.maxImageCount > 0 && imageCount > swapChainDetails.capabilities.maxImageCount) //So as to not have to wait to start writing the images so as to not
+        imageCount = swapChainDetails.capabilities.maxImageCount;                                                   //have to wait for the diver to start writing the images. However, we
+                                                                                                                    //still allow a lower number for better compatibility
+    vk::SwapchainCreateInfoKHR createInfo{
+        {},
+        surface.get(),
+        imageCount,
+        surfaceFormat.format,
+        surfaceFormat.colorSpace,
+        extent,
+        1,
+        vk::ImageUsageFlagBits::eColorAttachment
+    };
+
+    auto [graphicsQueueFamilyIndex, presentQueueFamilyIndex] = owo::getGraphicsQueueAndPresentQueue(vulkanContext.vkDevices.physicalDevice, surface);
+    uint32_t queueFamilyIndicies[] = {graphicsQueueFamilyIndex, presentQueueFamilyIndex};
+
+    if(graphicsQueueFamilyIndex == presentQueueFamilyIndex) {
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = nullptr;
+    } else {
+        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndicies;
+    }
+
+    createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    createInfo.presentMode = presentMode.presentMode;
+    createInfo.oldSwapchain = nullptr;
+
+    auto swapchain = vulkanContext.vkDevices.logicalDevice->createSwapchainKHRUnique(createInfo);
+
+    return {std::move(swapchain)};
+}
 
 }
